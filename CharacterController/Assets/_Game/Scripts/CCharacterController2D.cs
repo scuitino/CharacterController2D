@@ -5,6 +5,10 @@ using UnityEngine;
 [RequireComponent (typeof(BoxCollider2D))]
 public class CCharacterController2D : MonoBehaviour {
 
+    // collision mask
+    [SerializeField]
+    LayerMask _collisionMask;
+
     // to have space to throw the rays when the player is grounded
     const float _skinWidth = 0.015f;
 
@@ -28,19 +32,99 @@ public class CCharacterController2D : MonoBehaviour {
 
     private void Start()
     {
-        _collider = this.GetComponent<BoxCollider2D>();   
+        // controller collider
+        _collider = this.GetComponent<BoxCollider2D>();
+
+        // calculate space between rays
+        CalculateRaySpacing();
     }
 
-    private void Update()
+    // apply velocity to character controller
+    public void Move(Vector3 aVelocity)
     {
         // updating and calculating rays
         UpdateRaycastOrigins();
-        CalculateRaySpacing();
 
-        // debug vertical rays
+        // applying vertical collisions
+        if (aVelocity.x != 0)
+            HorizontalCollisions(ref aVelocity);
+
+        if (aVelocity.y != 0)
+            VerticalCollisions(ref aVelocity);
+
+        // move transform
+        transform.Translate(aVelocity);
+    }
+
+    // checking and applying Horizontal collisions
+    public void HorizontalCollisions(ref Vector3 aVelocity)
+    {
+        // return positive (1) or negative (-1)
+        float tDirectionX = Mathf.Sign(aVelocity.x);
+
+        // return abs of y velocity + skinwidth of the controller
+        float tRayLenght = Mathf.Abs(aVelocity.x) + _skinWidth;
+
+        // throwing vertical rays
+        for (int i = 0; i < _horizontalRayCount; i++)
+        {
+            // if the direction is left use bottonLeft else use bottonRight
+            Vector2 tRayOrigin = (tDirectionX == -1) ? _raycarsOrigins._bottonLeft : _raycarsOrigins._bottonRight;
+
+            // positioning each ray origin
+            tRayOrigin += Vector2.up * (_horizontalRaySpacing * i);
+
+            // throwing ray
+            RaycastHit2D tHit = Physics2D.Raycast(tRayOrigin, Vector2.right * tDirectionX, tRayLenght, _collisionMask);
+
+            // debuging ray
+            Debug.DrawRay(tRayOrigin, Vector2.right * tDirectionX * tRayLenght, Color.red);
+
+            // if the ray touch something
+            if (tHit)
+            {
+                // calculating the Y velocity needed to reach the collider 
+                aVelocity.x = (tHit.distance - _skinWidth) * tDirectionX; // tHit.distance is always positive 
+
+                // to avoid the next rays hit a Farther object
+                tRayLenght = tHit.distance;
+            }
+        }
+    }
+
+    // checking and applying vertical collisions
+    public void VerticalCollisions(ref Vector3 aVelocity)
+    {
+        // return positive (1) or negative (-1)
+        float tDirectionY = Mathf.Sign(aVelocity.y);
+
+        // return abs of y velocity + skinwidth of the controller
+        float tRayLenght = Mathf.Abs(aVelocity.y) + _skinWidth;
+
+        // throwing vertical rays
         for (int i = 0; i < _verticalRayCount; i++)
         {
-            Debug.DrawRay(_raycarsOrigins._bottonLeft + Vector2.right * _verticalRaySpacing * i, Vector2.down, Color.red);
+            // if the direction is down use bottonLeft else use topleft
+            Vector2 tRayOrigin = (tDirectionY == -1) ? _raycarsOrigins._bottonLeft : _raycarsOrigins._topLeft;
+
+            // positioning each ray origin
+            tRayOrigin += Vector2.right * (_verticalRaySpacing * i + aVelocity.x);
+
+            // throwing ray
+            RaycastHit2D tHit = Physics2D.Raycast(tRayOrigin, Vector2.up * tDirectionY, tRayLenght, _collisionMask);
+
+            // debuging ray
+            Debug.DrawRay(tRayOrigin, Vector2.up * tDirectionY * tRayLenght, Color.red);
+
+            // if the ray touch something
+            if (tHit)
+            {
+                // calculating the Y velocity needed to reach the collider 
+                aVelocity.y = (tHit.distance - _skinWidth) * tDirectionY; // tHit.distance is always positive 
+
+                // to avoid the next rays hit a Farther object
+                tRayLenght = tHit.distance;
+            }            
         }
     }
 
