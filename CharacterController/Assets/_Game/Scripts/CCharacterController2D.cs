@@ -30,6 +30,9 @@ public class CCharacterController2D : MonoBehaviour {
     // reference to the corners of the character box colliders
     RaycastOrigins _raycarsOrigins;
 
+    //instance of collisions info
+    public CollisionsInfo _collisionsInfo;
+
     private void Start()
     {
         // controller collider
@@ -44,6 +47,9 @@ public class CCharacterController2D : MonoBehaviour {
     {
         // updating and calculating rays
         UpdateRaycastOrigins();
+
+        // reset collisions info
+        _collisionsInfo.Reset();
 
         // applying vertical collisions
         if (aVelocity.x != 0)
@@ -88,6 +94,10 @@ public class CCharacterController2D : MonoBehaviour {
 
                 // to avoid the next rays hit a Farther object
                 tRayLenght = tHit.distance;
+
+                // if tDirectionX == -1 = left is true, if == 1 right is true
+                _collisionsInfo._left = tDirectionX == -1;
+                _collisionsInfo._right = tDirectionX == 1;
             }
         }
     }
@@ -124,6 +134,10 @@ public class CCharacterController2D : MonoBehaviour {
 
                 // to avoid the next rays hit a Farther object
                 tRayLenght = tHit.distance;
+
+                // if tDirectionY == -1 = left is true, if == 1 right is true
+                _collisionsInfo._isGrounded = tDirectionY == -1;
+                _collisionsInfo._above = tDirectionY == 1;
             }            
         }
     }
@@ -165,5 +179,21 @@ public class CCharacterController2D : MonoBehaviour {
     {
         public Vector2 _topLeft, _topRight;
         public Vector2 _bottonLeft, _bottonRight;
+    }
+
+    // info about the collisions
+    public struct CollisionsInfo
+    {
+        public bool _above, _isGrounded;
+        public bool _left, _right;
+
+        // turn all collisions info to false
+        public void Reset()
+        {
+            _above = false;
+            _isGrounded = false; // isgrounded?
+            _left = false;
+            _right = false;
+        }
     }
 }
