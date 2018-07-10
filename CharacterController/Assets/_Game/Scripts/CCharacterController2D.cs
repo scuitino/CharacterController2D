@@ -20,6 +20,10 @@ public class CCharacterController2D : MonoBehaviour {
     [SerializeField]
     int _verticalRayCount = 4;
 
+    // to limit the max climb slope angle
+    [SerializeField]
+    float _maxSlopeClimbAngle = 80;
+
     // to calculate the spacing between the rays
     float _horizontalRaySpacing;
     float _verticalRaySpacing;
@@ -51,10 +55,9 @@ public class CCharacterController2D : MonoBehaviour {
         // reset collisions info
         _collisionsInfo.Reset();
 
-        // applying vertical collisions
+        // applying collisions
         if (aVelocity.x != 0)
             HorizontalCollisions(ref aVelocity);
-
         if (aVelocity.y != 0)
             VerticalCollisions(ref aVelocity);
 
@@ -83,21 +86,55 @@ public class CCharacterController2D : MonoBehaviour {
             // throwing ray
             RaycastHit2D tHit = Physics2D.Raycast(tRayOrigin, Vector2.right * tDirectionX, tRayLenght, _collisionMask);
 
-            // debuging ray
             Debug.DrawRay(tRayOrigin, Vector2.right * tDirectionX * tRayLenght, Color.red);
 
-            // if the ray touch something
             if (tHit)
             {
-                // calculating the Y velocity needed to reach the collider 
-                aVelocity.x = (tHit.distance - _skinWidth) * tDirectionX; // tHit.distance is always positive 
+                // obtain slope angle comparing slope normal with vector.up
+                float tSlopeAngle = Vector2.Angle(tHit.normal, Vector2.up);
 
-                // to avoid the next rays hit a Farther object
-                tRayLenght = tHit.distance;
+                // check only with botton horizontal raycast
+                if (i == 0 && tSlopeAngle <= _maxSlopeClimbAngle) 
+                {
+                    float tDistanceToSlopeStart = 0;
 
-                // if tDirectionX == -1 = left is true, if == 1 right is true
-                _collisionsInfo._left = tDirectionX == -1;
-                _collisionsInfo._right = tDirectionX == 1;
+                    //when a new slop is starting
+                    if (tSlopeAngle != _collisionsInfo._oldSlopeAngle)
+                    {
+                        // distance from the skinwidth to the slope
+                        tDistanceToSlopeStart = tHit.distance - _skinWidth;
+
+                        // substract to use only the x velocity corresponding to the part of the slope
+                        aVelocity.x -= tDistanceToSlopeStart * tDirectionX;
+                    }
+
+                    ClimbSlope(ref aVelocity, tSlopeAngle);
+
+                    // add again to move the player to correct position
+                    aVelocity.x += tDistanceToSlopeStart * tDirectionX;
+                }
+
+                // is not climbing or the actual ray is colliding with a wall
+                if (!_collisionsInfo._isClimbingSlope || tSlopeAngle > _maxSlopeClimbAngle)
+                {
+                    // calculating the X velocity needed to reach the collider 
+                    aVelocity.x = Mathf.Min(Mathf.Abs(aVelocity.x), (tHit.distance - _skinWidth)) * tDirectionX; // tHit.distance is always positive 
+
+                    // to avoid the next rays hit a Farther object
+                    tRayLenght = Mathf.Min(Mathf.Abs(aVelocity.x) + _skinWidth, tHit.distance);
+
+                    // to fix the shaking when it hits a wall when sloping
+                    if (_collisionsInfo._isClimbingSlope)
+                    {
+                        // opposite = tan(slopeangle) * adjacent
+                        aVelocity.y = Mathf.Tan(_collisionsInfo._slopeAngle * Mathf.Deg2Rad) * Mathf.Abs(aVelocity.x);
+                    }
+
+                    // if tDirectionX == -1 = left is true, if == 1 right is true
+                    _collisionsInfo._left = tDirectionX == -1;
+                    _collisionsInfo._right = tDirectionX == 1;
+                }
+                
             }
         }
     }
@@ -135,11 +172,44 @@ public class CCharacterController2D : MonoBehaviour {
                 // to avoid the next rays hit a Farther object
                 tRayLenght = tHit.distance;
 
+                // to fix the shaking when it hits a roof when sloping
+                if (_collisionsInfo._isClimbingSlope)
+                {
+                    // adjacent = opposite / tan(slopeangle)
+                    aVelocity.x = aVelocity.y / Mathf.Tan(_collisionsInfo._slopeAngle * Mathf.Deg2Rad) * Mathf.Sign(aVelocity.x);
+                }
+
                 // if tDirectionY == -1 = left is true, if == 1 right is true
                 _collisionsInfo._isGrounded = tDirectionY == -1;
                 _collisionsInfo._above = tDirectionY == 1;
             }            
         }
+    }
+
+    // use to climb slopes
+    void ClimbSlope(ref Vector3 aVelocity, float aSlopeAngle)
+    {
+        // to move the same distance as when is not slope use aVelocity.x as hypotenuse
+        float tMoveDistanceTarget = Mathf.Abs(aVelocity.x);
+
+        // y velocity = sin(slopeAngle) * hypotenuse
+        float tClimbVelocityY = Mathf.Sin(aSlopeAngle * Mathf.Deg2Rad) * tMoveDistanceTarget;
+
+        // if is not jumping
+        if (aVelocity.y <= tClimbVelocityY)
+        {
+            aVelocity.y = tClimbVelocityY;
+
+            // x velocity = cos(slopeAngle) * hypotenuse * sign of x (to maintain the maintain direction)
+            aVelocity.x = Mathf.Cos(aSlopeAngle * Mathf.Deg2Rad) * tMoveDistanceTarget * Mathf.Sign(aVelocity.x);
+
+            // to enable jump when the player is climbing
+            _collisionsInfo._isGrounded = true;
+
+            // updating climbing info
+            _collisionsInfo._isClimbingSlope = true;
+            _collisionsInfo._slopeAngle = aSlopeAngle;
+        }        
     }
 
     // update raycast origin positions
@@ -184,16 +254,25 @@ public class CCharacterController2D : MonoBehaviour {
     // info about the collisions
     public struct CollisionsInfo
     {
-        public bool _above, _isGrounded;
+        public bool _above;
         public bool _left, _right;
+
+        // isgrounded?
+        public bool _isGrounded;
+
+        // slope info
+        public bool _isClimbingSlope;
+        public float _slopeAngle, _oldSlopeAngle;
 
         // turn all collisions info to false
         public void Reset()
         {
             _above = false;
-            _isGrounded = false; // isgrounded?
+            _isGrounded = false;
             _left = false;
             _right = false;
+            _isClimbingSlope = false;
+            _oldSlopeAngle = _slopeAngle;
         }
     }
 }
