@@ -20,9 +20,12 @@ public class CCharacterController2D : MonoBehaviour {
     [SerializeField]
     int _verticalRayCount = 4;
 
-    // to limit the max climb slope angle
+    // to limit the max ascend and descend slope angle
     [SerializeField]
-    float _maxSlopeClimbAngle = 80;
+    float _maxSlopeClimbAngle = 75;
+
+    [SerializeField]
+    float _maxSlopeDescendAngle = 75;
 
     // to calculate the spacing between the rays
     float _horizontalRaySpacing;
@@ -54,6 +57,13 @@ public class CCharacterController2D : MonoBehaviour {
 
         // reset collisions info
         _collisionsInfo.Reset();
+
+        _collisionsInfo._oldVelocity = aVelocity;
+
+        if (aVelocity.y < 0)
+        {
+            DescendSlope(ref aVelocity);
+        }
 
         // applying collisions
         if (aVelocity.x != 0)
@@ -96,6 +106,13 @@ public class CCharacterController2D : MonoBehaviour {
                 // check only with botton horizontal raycast
                 if (i == 0 && tSlopeAngle <= _maxSlopeClimbAngle) 
                 {
+                    // to stop descending when a ascending start
+                    if (_collisionsInfo._isDescendingSlope) 
+                    {
+                        _collisionsInfo._isDescendingSlope = false;
+                        aVelocity = _collisionsInfo._oldVelocity;
+                    }
+
                     float tDistanceToSlopeStart = 0;
 
                     //when a new slop is starting
@@ -236,6 +253,40 @@ public class CCharacterController2D : MonoBehaviour {
         }        
     }
 
+    // use to descend slopes
+    void DescendSlope(ref Vector3 aVelocity)
+    {
+        float tDirectionX = Mathf.Sign(aVelocity.x);
+        // if direction is right use left bottom ray else use left bottom
+        Vector2 tRayOrigin = (tDirectionX == -1) ? _raycarsOrigins._bottonRight : _raycarsOrigins._bottonLeft;
+        RaycastHit2D tHit = Physics2D.Raycast(tRayOrigin, -Vector2.up, Mathf.Infinity, _collisionMask);
+
+        if (tHit)
+        {
+            float tSlopeAngle = Vector2.Angle(tHit.normal, Vector2.up);
+
+            // there is a slope that the player can walk?
+            if(tSlopeAngle != 0 && tSlopeAngle <= _maxSlopeDescendAngle)
+            {
+                // to know if the slope is in the same direction than the player
+                if(Mathf.Sign(tHit.normal.x) == tDirectionX)
+                {
+                    if(tHit.distance - _skinWidth <= Mathf.Tan(tSlopeAngle * Mathf.Deg2Rad) * Mathf.Abs(aVelocity.x))
+                    {
+                        float tMoveDistance = Mathf.Abs(aVelocity.x);
+                        float tDescendVelocityY = Mathf.Sin(tSlopeAngle * Mathf.Deg2Rad) * tMoveDistance;
+                        aVelocity.x = Mathf.Cos(tSlopeAngle * Mathf.Deg2Rad) * tMoveDistance * Mathf.Sign(aVelocity.x);
+                        aVelocity.y -= tDescendVelocityY;
+
+                        _collisionsInfo._slopeAngle = tSlopeAngle;
+                        _collisionsInfo._isDescendingSlope = true;
+                        _collisionsInfo._isGrounded = true;
+                    }
+                }
+            }
+        }
+    }
+
     // update raycast origin positions
     void UpdateRaycastOrigins()
     {
@@ -286,7 +337,10 @@ public class CCharacterController2D : MonoBehaviour {
 
         // slope info
         public bool _isClimbingSlope;
+        public bool _isDescendingSlope;
         public float _slopeAngle, _oldSlopeAngle;
+
+        public Vector3 _oldVelocity;
 
         // turn all collisions info to false
         public void Reset()
@@ -296,6 +350,7 @@ public class CCharacterController2D : MonoBehaviour {
             _left = false;
             _right = false;
             _isClimbingSlope = false;
+            _isDescendingSlope = false;
             _oldSlopeAngle = _slopeAngle;
         }
     }
