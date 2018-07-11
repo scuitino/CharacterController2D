@@ -368,13 +368,13 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 226890587}
-  m_LocalRotation: {x: -0, y: -0, z: 0.36071843, w: 0.9326748}
-  m_LocalPosition: {x: 8.235, y: 0.17, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: 0.50445145, w: 0.86344004}
+  m_LocalPosition: {x: 7.117, y: -1.166, z: 0}
   m_LocalScale: {x: 18.583517, y: 0.80570745, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 6
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 42.289}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 60.590004}
 --- !u!1 &282840810
 GameObject:
   m_ObjectHideFlags: 0
@@ -641,13 +641,13 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 990732094}
-  m_LocalRotation: {x: -0, y: -0, z: 0.1747692, w: 0.9846094}
+  m_LocalRotation: {x: -0, y: -0, z: 0.09686689, w: 0.9952974}
   m_LocalPosition: {x: 2.83, y: -2.597, z: 0}
   m_LocalScale: {x: 18.583517, y: 0.80570745, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 4
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 20.130001}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 11.118001}
 --- !u!1 &1014838749
 GameObject:
   m_ObjectHideFlags: 0
@@ -782,7 +782,7 @@ MonoBehaviour:
     m_Bits: 1024
   _horizontalRayCount: 4
   _verticalRayCount: 4
-  _maxSlopeClimbAngle: 50
+  _maxSlopeClimbAngle: 40
 --- !u!61 &1188009696
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -823,7 +823,7 @@ MonoBehaviour:
   _timeToJumpApex: 0.4
   _accelerationTimeGrounded: 0.1
   _accelerationTimeAirborne: 0.2
-  _moveSpeed: 10
+  _moveSpeed: 4
 --- !u!23 &1188009698
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -873,7 +873,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1188009694}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 5.524, y: -0.464, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}

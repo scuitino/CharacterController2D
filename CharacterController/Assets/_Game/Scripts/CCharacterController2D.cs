@@ -179,10 +179,34 @@ public class CCharacterController2D : MonoBehaviour {
                     aVelocity.x = aVelocity.y / Mathf.Tan(_collisionsInfo._slopeAngle * Mathf.Deg2Rad) * Mathf.Sign(aVelocity.x);
                 }
 
-                // if tDirectionY == -1 = left is true, if == 1 right is true
+                // if tDirectionY == -1 = isGrounded is true, if == 1 above is true
                 _collisionsInfo._isGrounded = tDirectionY == -1;
                 _collisionsInfo._above = tDirectionY == 1;
             }            
+        }
+
+        // to fix the bug when the player go into a new slope
+        if (_collisionsInfo._isClimbingSlope)
+        {
+            // i need to throw a horizontal ray from the new position using bottom origin
+            float tDirectionX = Mathf.Sign(aVelocity.x);
+            tRayLenght = Mathf.Abs(aVelocity.x) + _skinWidth;
+            Vector2 tRayOrigin = ((tDirectionX == -1) ? _raycarsOrigins._bottonLeft : _raycarsOrigins._bottonRight) + Vector2.up * aVelocity.y;
+            RaycastHit2D tHit = Physics2D.Raycast(tRayOrigin, Vector2.right * tDirectionX, tRayLenght, _collisionMask);
+
+            if (tHit)
+            {
+                float tSlopeAngle = Vector2.Angle(tHit.normal, Vector2.up);
+
+                // if a new slope start 
+                if (tSlopeAngle != _collisionsInfo._slopeAngle && tSlopeAngle < _maxSlopeClimbAngle) 
+                {
+                    // adjust x and y velocity
+                    aVelocity.y = Mathf.Sin(tSlopeAngle * Mathf.Deg2Rad) * aVelocity.magnitude;
+                    aVelocity.x = Mathf.Cos(tSlopeAngle * Mathf.Deg2Rad) * aVelocity.magnitude;
+                    _collisionsInfo._slopeAngle = tSlopeAngle;
+                }
+            }
         }
     }
 
