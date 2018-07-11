@@ -726,7 +726,7 @@ MonoBehaviour:
   _timeToJumpApex: 0.4
   _accelerationTimeGrounded: 0.1
   _accelerationTimeAirborne: 0.2
-  _moveSpeed: 4
+  _moveSpeed: 7
 --- !u!23 &1188009698
 MeshRenderer:
   m_ObjectHideFlags: 0

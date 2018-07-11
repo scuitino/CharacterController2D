@@ -271,13 +271,21 @@ public class CCharacterController2D : MonoBehaviour {
                 // to know if the slope is in the same direction than the player
                 if(Mathf.Sign(tHit.normal.x) == tDirectionX)
                 {
-                    if(tHit.distance - _skinWidth <= Mathf.Tan(tSlopeAngle * Mathf.Deg2Rad) * Mathf.Abs(aVelocity.x))
+                    // if the ray lenght is less or equal than how much you must move to reach the slope according to the angle
+                    // in this case descend. Else is jumping or falling.
+                    if (tHit.distance - _skinWidth <= Mathf.Tan(tSlopeAngle * Mathf.Deg2Rad) * Mathf.Abs(aVelocity.x))
                     {
-                        float tMoveDistance = Mathf.Abs(aVelocity.x);
-                        float tDescendVelocityY = Mathf.Sin(tSlopeAngle * Mathf.Deg2Rad) * tMoveDistance;
-                        aVelocity.x = Mathf.Cos(tSlopeAngle * Mathf.Deg2Rad) * tMoveDistance * Mathf.Sign(aVelocity.x);
+                        // to move the same distance as when is not slope use aVelocity.x as hypotenuse
+                        float tMoveDistanceTarget = Mathf.Abs(aVelocity.x);
+
+                        // opposite = sin(slopeAngle) * adjacent
+                        float tDescendVelocityY = Mathf.Sin(tSlopeAngle * Mathf.Deg2Rad) * tMoveDistanceTarget;
+
+                        // x velocity = cos(slopeAngle) * hypotenuse * sign of x (to maintain the maintain direction)
+                        aVelocity.x = Mathf.Cos(tSlopeAngle * Mathf.Deg2Rad) * tMoveDistanceTarget * Mathf.Sign(aVelocity.x);
                         aVelocity.y -= tDescendVelocityY;
 
+                        // updating info
                         _collisionsInfo._slopeAngle = tSlopeAngle;
                         _collisionsInfo._isDescendingSlope = true;
                         _collisionsInfo._isGrounded = true;
